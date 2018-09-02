@@ -1,9 +1,9 @@
 # tf-data-input-pipeline
   Ready made scripts to make data input and pre-processing easier in TensorFlow using Data API
 
-Preprocessing data and configuring an input pipeline for a TensorFlow program can be a pain if enough experience is not present. In order to easen this process I have written a series of scripts to cover majority usecases so that you can focus more on the algorithm than on the data loading part.
+Preprocessing data and configuring an input pipeline for a TensorFlow program can be a pain if enough experience is not present. In order to ease this process I have written a series of scripts to cover majority usecases so that you can focus more on the algorithm than on the data loading part.
 
-Inspiration is taken from **Keras** and other sources to maximise support variety of input pipelines.
+Inspiration is taken from **Keras** and other sources to maximise support to variety of input pipelines.
 
 ```python
 from input_utils import flow_from_directory
@@ -22,4 +22,3 @@ sess.run(init_op)
 ```
 
 Support will be extended to Semantic Segmentation, text file parsing and others soon.
- 
