@@ -38,4 +38,33 @@ image, mask = sess.run(next_element)
 # Run the optimizer step multiple times
 
 ```
+
+## Single Image Input
+
+Used in cases of
+  - unsupervised images training
+  - Super Resolution - Where low resolution image is obtained from the high resolution images. So effectively one image the other pair can be found. (other tasks include deblurring, denoising etc)
+  
+Provision provided to code the function that maps from one function to another. The implemented code by default implements a scaling (resizing by a factor of 2). Support can be extended based on user needs.
+
+```python
+from input_utils import segmentation_data
+
+# image_path contains the path to the folder of images
+next_element, init_op = read_no_labels(image_path)
+
+# Use next_element as input to the model
+
+sess = tf.Session()
+sess.run(init_op)
+
+# Here image represents the image in the folder given above. mask corresponds to the transformed version of the input image. (in case of super resolution the low res image if inputs are high res image)
+
+image, mask = sess.run(next_element)
+
+# Training Loop starts here
+# Run the optimizer step multiple times
+
+```
+
 Support will be extended to other methods of input also.
