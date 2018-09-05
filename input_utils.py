@@ -140,7 +140,8 @@ def _resize_data_classification(image, label, target_size):
 
     return image, label
 
-def data_batch(image_paths, mask_paths, augment=False, shuffle_data = True,  seed=None,  num_parallel_calls=2, prefetch=64):
+def segmentation_data(image_paths, mask_paths, augment=False, shuffle_data = True, 
+                    seed=None,  num_parallel_calls=2, prefetch=64, batch_size=32):
     """Reads data, normalizes it, shuffles it, then batches it, returns a
        the next element in dataset op and the dataset initializer op.
        Inputs:
@@ -167,31 +168,31 @@ def data_batch(image_paths, mask_paths, augment=False, shuffle_data = True,  see
 
     # Parse images and labels
     data = data.map(
-        _parse_data_segmentation, num_parallel_calls=num_threads).prefetch(prefetch)
+        _parse_data_segmentation, num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
     # If augmentation is to be applied
     
     if augment:
         data = data.map(_corrupt_brightness,
-                        num_parallel_calls=num_threads).prefetch(prefetch)
+                        num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
         data = data.map(_corrupt_contrast,
-                        num_parallel_calls=num_threads).prefetch(prefetch)
+                        num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
         data = data.map(_corrupt_saturation,
-                        num_parallel_calls=num_threads).prefetch(prefetch)
+                        num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
         data = data.map(
-            _crop_random_segmentation, num_parallel_calls=num_threads).prefetch(prefetch)
+            _crop_random_segmentation, num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
         data = data.map(_flip_left_right_segmentation,
-                        num_parallel_calls=num_threads).prefetch(prefetch)
+                        num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
     # Batch the data
     data = data.batch(batch_size)
 
     # Resize to smaller dims for speed
-    data = data.map(_resize_data, num_parallel_calls=num_threads).prefetch(prefetch)
+    data = data.map(_resize_data, num_parallel_calls=num_parallel_calls).prefetch(prefetch)
 
     # Normalize
     # data = data.map(_normalize_data,
@@ -279,7 +280,7 @@ def flow_from_directory(directory, target_size=(256, 256), batch_size=32, shuffl
 
     return next_element, init_op
 
-def segmentation_data()
+
 if __name__ == '__main__':
     dire = '/home/tlokeshkumar/Documents/computer_vision_machine_learning/Fast-image-classification/train_dir'
     n, ini = flow_from_directory(dire)

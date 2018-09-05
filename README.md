@@ -5,6 +5,7 @@ Preprocessing data and configuring an input pipeline for a TensorFlow program ca
 
 Inspiration is taken from **Keras** and other sources to maximise support to variety of input pipelines.
 
+## Image Classification
 ```python
 from input_utils import flow_from_directory
 
@@ -21,4 +22,20 @@ sess.run(init_op)
 
 ```
 
-Support will be extended to Semantic Segmentation, text file parsing and others soon.
+## Semantic Segmentation
+```python
+from input_utils import segmentation_data
+
+next_element, init_op = segmentation_data(image_path, mask_path)
+
+# Use next_element as input to the model
+
+sess = tf.Session()
+sess.run(init_op)
+
+image, mask = sess.run(next_element)
+# Training Loop starts here
+# Run the optimizer step multiple times
+
+```
+Support will be extended to other methods of input also.
