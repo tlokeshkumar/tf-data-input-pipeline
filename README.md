@@ -42,15 +42,18 @@ image, mask = sess.run(next_element)
 ## Single Image Input
 
 Used in cases of
-  - unsupervised images training
-  - Super Resolution - Where low resolution image is obtained from the high resolution images. So effectively one image the other pair can be found. (other tasks include deblurring, denoising etc)
+  - Unsupervised images training
+  - **Super Resolution** - Where low resolution image is obtained from the high resolution images. So effectively from one image the other pair can be found. (other tasks include **deblurring, denoising** etc)
   
-Provision provided to code the function that maps from one function to another. The implemented code by default implements a scaling (resizing by a factor of 2). Support can be extended based on user needs.
+Provision has been provided to code the function that maps one image to another. The code by default implements a scaling (resizing by a factor of 2). Support can be extended based on user needs.
+
+You can also work with the same image (in case of auto encoders) where you can remove the line where the function is written. (Integration with the function arguments will be done)
 
 ```python
-from input_utils import segmentation_data
+from input_utils import read_no_labels
 
 # image_path contains the path to the folder of images
+image_path = '/home/tlokeshkumar/Downloads/GTOS_256/h_sample002_01'
 next_element, init_op = read_no_labels(image_path)
 
 # Use next_element as input to the model
