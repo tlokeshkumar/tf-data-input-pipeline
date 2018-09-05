@@ -280,10 +280,89 @@ def flow_from_directory(directory, target_size=(256, 256), batch_size=32, shuffl
 
     return next_element, init_op
 
+def _parse_single_image(image_paths, s):
+    """Reads image and s is the scale factor"""
+    image_content = tf.read_file(image_paths)
+    
+    images = tf.image.decode_jpeg(image_content, channels=3)
+    
+    # Define some transformation for the label (if you are using unsupervised learning)
+    # Since the task is super-resolution, we need to downscale the images.
+    print (images.get_shape())
+    init_w = tf.shape(images)[0]
+    init_h = tf.shape(images)[1]
+    
+    new_w = tf.to_int32(tf.to_float(init_w) / s)
+    new_h = tf.to_int32(tf.to_float(init_h) / s)
+
+    mask = tf.image.resize_images(images, (new_w, new_h))
+
+    return images, mask
+
+def read_no_labels(directory, s = 2, batch_size=1, shuffle_data=True, 
+                seed=None,  num_parallel_calls=2, 
+                prefetch=64):
+    
+    dataset = glob(os.path.join(directory, "*"))
+    
+    image_data = tf.constant(dataset)
+    data = tf.data.Dataset.from_tensor_slices(image_data)
+    
+    data = data.map(lambda x: _parse_single_image(x, s), num_parallel_calls=num_parallel_calls).prefetch(prefetch)
+    
+    # Dont perform data augmentation
+    '''
+    if augment:
+        data = data.map(_corrupt_brightness,
+                        num_parallel_calls=num_parallel_calls).prefetch(30)
+
+        data = data.map(_corrupt_contrast,
+                        num_parallel_calls=num_parallel_calls).prefetch(30)
+
+        data = data.map(_corrupt_saturation,
+                        num_parallel_calls=num_parallel_calls).prefetch(30)
+
+        data = data.map(
+            lambda x, y: _crop_random_classification(x, y, target_size), num_parallel_calls=num_parallel_calls).prefetch(30)
+
+        data = data.map(_flip_left_right_classification,
+                        num_parallel_calls=num_parallel_calls).prefetch(30)
+    '''
+    
+    # To ensure that batch of different images are passed
+    # data = data.apply(tf.contrib.data.unbatch())
+    data = data.shuffle(prefetch).repeat()
+
+    # Batch the data
+    data = data.batch(batch_size)
+
+    # Resize to smaller dims for speed
+    # data = data.map(lambda x, y: _resize_data_classification(x, y, target_size), num_parallel_calls=num_parallel_calls).prefetch(prefetch)
+
+
+    # Normalize
+    # data = data.map(_normalize_data,
+    #                 num_parallel_calls=num_parallel_calls).prefetch(30)
+
+
+    # Create iterator
+    iterator = tf.data.Iterator.from_structure(
+        data.output_types, data.output_shapes)
+
+    # Next element Op
+    next_element = iterator.get_next()
+
+    # Data set init. op
+    init_op = iterator.make_initializer(data)
+
+    return next_element, init_op
+
 
 if __name__ == '__main__':
-    dire = '/home/tlokeshkumar/Documents/computer_vision_machine_learning/Fast-image-classification/train_dir'
-    n, ini = flow_from_directory(dire)
+    dire = '/home/tlokeshkumar/Downloads/GTOS_256/h_sample002_01'
+    n, ini = read_no_labels(dire)
+
+    print ("passed the functions successfully!")
 
     init = tf.global_variables_initializer()
     
@@ -291,7 +370,12 @@ if __name__ == '__main__':
     sess.run(init)
     sess.run(ini)
 
-    for i in range(100):
+    for i in range(5):
         a, b = sess.run(n)
-        print (np.argmax(b, axis=1))
-
+        print (b)
+        print (a.shape)
+        print (np.squeeze(b, axis=0).shape)
+        cv2.imshow("image", np.squeeze(a, axis=0))
+        cv2.imshow("downsampled", np.squeeze(b.astype('uint8'), axis=0))
+        cv2.waitKey()
+        cv2.destroyAllWindows()
