@@ -5,6 +5,9 @@ Preprocessing data and configuring an input pipeline for a TensorFlow program ca
 
 Inspiration is taken from **Keras** and other sources to maximise support to variety of input pipelines.
 
+Use `.jpg` images. The extension to other formats will be provided.
+
+
 ## Image Classification
 ```python
 from input_utils import flow_from_directory
