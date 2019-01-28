@@ -123,6 +123,22 @@ def _parse_data_segmentation(image_paths, mask_paths):
 
     return images, mask
 
+def _parse_data_depth(image_paths, mask_paths, depth_paths):
+    """
+    image_paths: RS Image Paths
+    mask_paths: GS Image Paths
+    depth_paths: Depth Image Path
+    """
+    image_content = tf.read_file(image_paths)
+    mask_content = tf.read_file(mask_paths)
+    depth_content = tf.read_file(depth_paths)
+
+    images = tf.image.decode_jpeg(image_content, channels=3)
+    mask = tf.image.decode_jpeg(mask_content, channels=3)
+    depth = tf.image.decode_jpeg(depth_content, channels=1)
+
+    return images, depth, mask 
+
 def _parse_data_classification(image_paths, labels, target_size, class_len):
     """Reads image and mask files"""
     image_content = tf.read_file(image_paths)
@@ -203,6 +219,59 @@ def segmentation_data(image_paths, mask_paths, augment=False, shuffle_data = Tru
     # Create iterator
     iterator = tf.data.Iterator.from_structure(
         data.output_types, data.output_shapes)
+
+    # Next element Op
+    next_element = iterator.get_next()
+
+    # Data set init. op
+    init_op = iterator.make_initializer(data)
+
+    return next_element, init_op
+
+def three_images(image_paths, mask_paths, depth_paths, shuffle_data = True,
+                seed=None,  num_parallel_calls=2, prefetch=64, batch_size=32):
+    """Reads data, normalizes it, shuffles it, then batches it, returns a
+       the next element in dataset op and the dataset initializer op.
+       Inputs:
+        image_paths: A list of paths to individual images
+        mask_paths: A list of paths to individual mask images
+        augment: Boolean, whether to augment data or not
+        batch_size: Number of images/masks in each batch returned
+        num_threads: Number of parallel calls to make
+       Returns:
+        next_element: A tensor with shape [3], where next_element[0]
+                      is image batch, next_element[1] is the corresponding
+                      depth batch, mask batch.
+        init_op: Data initializer op, needs to be executed in a session
+                 for the data queue to be filled up and the next_element op
+                 to yield batches"
+    """
+    # Convert lists of paths to tensors for tensorflow
+    images_name_tensor = tf.constant(image_paths)
+    mask_name_tensor = tf.constant(mask_paths)
+    depth_image_tensor = tf.constant(depth_paths)
+    # Create dataset out of the 2 files:
+    data = tf.data.Dataset.from_tensor_slices(
+        (images_name_tensor, mask_name_tensor, depth_image_tensor))
+
+    # Parse images and labels
+    data = data.map(
+        _parse_data_depth, num_parallel_calls=num_parallel_calls).prefetch(prefetch)
+
+    # Batch the data
+    data = data.batch(batch_size)
+
+    # Resize to smaller dims for speed
+    # data = data.map(_resize_data, num_parallel_calls=num_parallel_calls).prefetch(prefetch)
+
+    # Normalize
+    # data = data.map(_normalize_data,
+    #                 num_parallel_calls=num_threads).prefetch(30)
+
+    data = data.shuffle(prefetch).repeat()
+
+    # Create iterator
+    iterator = tf.data.Iterator.from_structure(data.output_types, data.output_shapes)
 
     # Next element Op
     next_element = iterator.get_next()
@@ -359,8 +428,11 @@ def read_no_labels(directory, s = 2, batch_size=1, shuffle_data=True,
 
 
 if __name__ == '__main__':
-    dire = '/home/tlokeshkumar/Downloads/GTOS_256/h_sample002_01'
-    n, ini = read_no_labels(dire)
+    img = "/home/tlokeshkumar/Pictures/"
+    img_path = img + "Hopetoun_falls.jpg"
+    rs_path = img + "WELCOME.jpg"
+    depth = img + "Webcam/2018-06-24-231208.jpg"
+    n, ini = three_images([img_path], [rs_path], [depth], batch_size=1)
 
     print ("passed the functions successfully!")
 
@@ -371,11 +443,12 @@ if __name__ == '__main__':
     sess.run(ini)
 
     for i in range(5):
-        a, b = sess.run(n)
-        print (b)
+        a, b, c = sess.run(n)
         print (a.shape)
-        print (np.squeeze(b, axis=0).shape)
-        cv2.imshow("image", np.squeeze(a, axis=0))
-        cv2.imshow("downsampled", np.squeeze(b.astype('uint8'), axis=0))
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+        print (b.shape)
+        print (c.shape)
+        # print (np.squeeze(b, axis=0).shape)
+        # cv2.imshow("image", np.squeeze(a, axis=0))
+        # cv2.imshow("downsampled", np.squeeze(b.astype('uint8'), axis=0))
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
